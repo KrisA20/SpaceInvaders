@@ -1,0 +1,785 @@
+84% of storage used … If you run out, you can't create, edit, and upload files. Get 100 GB of storage for £1.59 £0 for 1 month.
+import pygame
+from pygame import *
+import random
+import math
+
+pygame.init()  # initializes pygame
+pygame.mixer.init()
+
+WIDTH = 600
+HEIGHT = 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+# The program sets up the game window by creating a Pygame Surface object named screen with dimensions of 600 pixels by 600 pixels.
+spaceship = pygame.image.load("Spaceship2.png")
+clock = pygame.time.Clock()
+array = []
+bullet = pygame.image.load("Bullet.png")
+
+current_level = 1
+
+background = pygame.image.load("Background.png")
+background = pygame.transform.scale(background, (600, 600))
+you_won = pygame.image.load("Youwon.png")
+you_died = pygame.image.load("Youdied.png")
+
+red_enemy_image = pygame.image.load("Red.png")
+red_enemy_image = pygame.transform.scale(red_enemy_image, (55, 55))
+green_enemy_image = pygame.image.load("Green.png")
+green_enemy_image = pygame.transform.scale(green_enemy_image, (55, 55))
+blue_enemy_image = pygame.image.load("Blue.png")
+blue_enemy_image = pygame.transform.scale(blue_enemy_image, (55, 55))
+screen_background = pygame.image.load("Menu.png")
+green_enemy2 = pygame.image.load("Enemy2.png")
+green_enemy2 = pygame.transform.scale(green_enemy2, (55, 55))
+minion_enemy = pygame.image.load("Enemy2.png")
+minion_enemy = pygame.transform.scale(minion_enemy, (55, 55))
+
+explosion1 = pygame.image.load("Explosion1.png")
+explosion2 = pygame.image.load("Explosion2.png")
+explosion3 = pygame.image.load("Explosion3.png")
+
+Enemy_boss = pygame.image.load("EnemyBoss2.png")
+
+Smallgreen = pygame.image.load("Mike.png")
+Smallgreen = pygame.transform.scale(Smallgreen, (35, 35))
+Greenoct = pygame.image.load("GreenOct.png")
+Greenoct2 = pygame.image.load("GreenOct2.png")
+Greenoct3 = pygame.image.load("GreenOct3.png")
+
+alienship = pygame.image.load("better enemy.png")
+alienship2 = pygame.image.load("better enemy2.png")
+alienship3 = pygame.image.load("better enemy3.png")
+alienship = pygame.transform.scale(alienship, (55, 55))
+alienship2 = pygame.transform.scale(alienship2, (55, 55))
+alienship3 = pygame.transform.scale(alienship3, (55, 55))
+Greenoct = pygame.transform.scale(Greenoct, (125, 125))
+
+Greenoct2 = pygame.transform.scale(Greenoct2, (125, 125))
+Greenoct3 = pygame.transform.scale(Greenoct3, (125, 125))
+start_level_screen_list = [pygame.image.load("Lvl1background.png"),
+                           pygame.image.load("Lvl2background.png"),
+                           pygame.image.load("Lvl3background.png"),
+                           pygame.image.load("Lvl4background.png")]
+
+Enemy_boss = pygame.transform.scale(Enemy_boss, (125, 125))
+enemy_bullet = pygame.image.load("EnemyBullet.png")
+enemy_bullet = pygame.transform.scale(enemy_bullet, (20, 20))
+
+
+laser_player = pygame.mixer.Sound("laser.mp3")
+laser_player.set_volume(0.01)
+# This loads the sound laser.mp3 into the independent variable laser_player
+bgmusic = pygame.mixer.music.load("BGmusic.mp3")
+bgmusic = pygame.mixer.music.play(-1)
+bgmusic = pygame.mixer.music.set_volume(0.01)
+# This loads the BackgroundMusic into the bgmusic independent variable
+pickup_sound = pygame.mixer.Sound("Pickupsound.mp3")
+pickup_sound.set_volume(0.05)
+
+full_heart = pygame.image.load("FullHeart.png")
+half_heart = pygame.image.load("HalfHeart.png")
+infobar = pygame.image.load("Infobar.png")
+infobar = pygame.transform.scale(infobar, (180, 70))
+
+
+pick_up_dict = {"health pack": pygame.image.load("Healthpack.png"),
+                "double bullets": pygame.image.load("Doublebullet.png"),
+                "fast shoot": pygame.image.load("Fasterbullet.png")}
+
+button_image = pygame.image.load("StartButtonW.png")
+button_image = pygame.transform.smoothscale(button_image, (100, 60))
+button_area = button_image.get_rect()
+button_area.topleft = (240, 250)
+
+highlighted_button_image = pygame.image.load("StartButton.png")
+highlighted_button_image = pygame.transform.smoothscale(highlighted_button_image, (110, 65))
+
+quit_button_image = pygame.image.load("quitWhite.png")
+quit_button_image = pygame.transform.smoothscale(quit_button_image, (100, 60))
+quit_button_area = quit_button_image.get_rect()
+quit_button_area.topleft = (240, 310)
+highlighted_quit_button_image = pygame.image.load("quitRed.png")
+highlighted_quit_button_image = pygame.transform.smoothscale(highlighted_quit_button_image, (110, 65))
+
+audio_button = pygame.image.load("AudioButton.png")
+audio_mute = pygame.image.load("AudioMute.png")
+audio_button_area = audio_button.get_rect()
+audio_button_area.topleft = (550, 550)
+audiomute_button_area = audio_mute.get_rect()
+
+alienship_list = [alienship, alienship2, alienship3]
+
+explosion_image_list = [explosion1, explosion2,explosion3]
+bomb_explosion_list = [explosion1, explosion2, explosion3]
+# This creates the explosion list once an enemy is hit or the player is hit
+# The pygame.image.load loads the images from the program's directory
+# Using the pygame.transform it scales the images to the appropriate scale this includes spaceships, bullets, enemies, buttons etc
+# This part of the code is primarily focused on setting up the game's visual and audio elements.
+
+
+class Character(pygame.sprite.Sprite):
+# This is a Python class named Character which inherits from the pygame.sprite.Sprite class
+# It is used to create different types of characters in game, including the player, enemies, and bosses
+    def __init__(self, x, y, image, type):
+        # The class takes four parameters: x, y, image, and type. The x and y parameters specify the original position of the character on the game screen
+        # The image parameter is the image used to represent the character in the game.
+        # The "type" parameter is a string that determines the type of character.
+        pygame.sprite.Sprite.__init__(self)
+        if type == "player":
+            # The "type" parameter determines the characteristics of that specific enemy such as health, damage, speed, shoot-cooldown etc
+            self.speed = 3
+            self.max_health = 100
+            self.health = 100
+            self.shoot_cooldown = 2000
+            self.chance = 0
+            self.damage = 50
+            self.alive = True
+            # for example if the type == "player" then speed = 3, health = 100, damage = 50 etc
+        elif type == "standard enemy":
+            self.speed = 2
+            self.max_health = 50
+            self.health = 50
+            self.shoot_cooldown = 400
+            self.chance = 5
+            self.give_score = 20
+            self.damage = 34
+        elif type == "better enemy":
+            self.image_list = [alienship, alienship2, alienship3]
+            self.speed = 2
+            self.max_health = 100
+            self.health = 100
+            self.shoot_cooldown = 200
+            self.chance = 5
+            self.give_score = 20
+            self.damage = 34
+            self.counter = 0
+            self.image_index = 0
+        elif type == "boss":
+            self.speed = 4
+            self.max_health = 750
+            self.health = 750
+            self.chance = 18
+            self.shoot_cooldown = 100
+            self.invincible_mode = False
+            self.summoned_enemies = False
+            self.damage = 25
+            self.give_score = 500
+        elif type == "minion enemy":
+            self.speed = 3
+            self.health = 50
+            self.max_health = 50
+            self.shoot_cooldown = 100
+            self.chance = 4
+            self.give_score = 10
+            self.damage = 34
+        elif type == "second boss":
+            self.image_list = [Greenoct, Greenoct2, Greenoct3]
+            self.speed = 3
+            self.health = 750
+            self.max_health = 750
+            self.shoot_cooldown = 1000
+            self.chance = 11
+            self.give_score = 150
+            self.damage = 34
+            self.image_index = 0
+            self.blink_cd = 0
+            self.blink = 30
+            self.blink_wait = 300
+            self.counter = 0
+        elif type == "tracker enemy":
+            self.speed = 5
+            self.health = 50
+            self.max_health = 50
+            self.shoot_cooldown = 0
+            self.chance = 0
+            self.give_score = 10
+            self.damage = 30
+            self.frames = 0
+            self.increment_x = 0
+            self.increment_y = 0
+            # The "type" represents the type of character being created, which is used to distinguish between different types of enemies/sprites in the game
+
+        self.rect = image.get_rect()
+        # The rect attribute is a rectangle that defines the position and size of the characters image on the game screen
+        self.rect.center = (x, y)
+        self.type = type
+        self.image = image
+        self.direction = 1
+        self.score = 0
+        self.invincible = False
+        self.double_shoot = 0
+        self.fast_shoot = 0
+        self.last_shot = pygame.time.get_ticks()
+        # self is a parameter in function meaning its independent to that specific class, it allows me to access and modify variables and attributes in that instance
+
+
+    def move(self, direction):
+        if self.type == "tracker enemy":
+            # In this case the type == "tracker enemy"
+            player_x = playerShip.rect.x
+            player_y = playerShip.rect.y
+            # If the object is a "tracker enemy", it will try to follow the player's ship
+            # If the object is not a "tracker enemy", it will move in the direction specified by the parameter "direction"
+            if self.frames % 20 == 0:
+                x_ratio = player_x - self.rect.x
+                y_ratio = player_y - self.rect.y
+                temp = x_ratio
+                self.increment_x = (x_ratio / (abs(x_ratio) + abs(y_ratio))) * self.speed
+                self.increment_y = (y_ratio / (abs(temp) + abs(y_ratio))) * self.speed
+                # Get the x and y coordinates of the player's ship.
+                # Calculate the ratio of the difference between the player's coordinates and the object's coordinates in both x and y directions.
+                # Calculate the increments for x and y coordinates based on the ratio and the speed of the object.
+            self.frames += 1
+            self.rect.x += self.increment_x
+            self.rect.y += self.increment_y
+            # Update the objects coordinates.
+            if self.rect.x + self.image.get_width() > WIDTH or self.rect.x < 0:
+                self.kill()
+            if self.rect.y > HEIGHT or self.rect.y < 0:
+                self.kill()
+                # Check if the object is out of the screen. If so remove it from the game.
+
+        else:
+            dx, dy = 0, 0
+            if direction == "left":
+                dx -= self.speed
+            if direction == "right":
+                dx += self.speed
+            if direction == "up":
+                dy -= self.speed
+            if direction == "down":
+                dy += self.speed
+
+            if self.rect.x + self.image.get_width() + dx > WIDTH or self.rect.x + dx < 0:
+                dx = 0
+            if self.rect.bottom + dy > HEIGHT or self.rect.y + dy < 0:
+                dy = 0
+
+            self.rect.x += dx
+            self.rect.y += dy
+
+
+    def update(self):
+
+        if self.health <= 0:
+            if self.type != "player":
+                playerShip.score += self.give_score
+                display_reward_group.add(DisplayReward(self.rect.x, self.rect.y, 40, self.give_score,
+                                                       "WHITE", reward_font, self.type))
+            else:
+                self.alive = False
+                return
+            self.kill()
+
+        if self.type == "standard enemy" or self.type == "minion enemy" or self.type == "second boss" or self.type == "better enemy":
+            if self.rect.x - (0.2 * self.image.get_width()) < 0 or self.rect.x + (1.2 * self.image.get_width()) > WIDTH:
+                self.direction *= -1
+            if self.direction == 1:
+                self.move("left")
+            if self.direction == -1:
+                self.move("right")
+        if self.type == "tracker enemy":
+            self.move("none")
+            if self.rect.colliderect(playerShip.rect):
+                display_reward_group.add(DisplayReward(self.rect.x, self.rect.y, 20, "",
+                                                       "WHITE", reward_font, self.type))
+                playerShip.health -= self.damage
+                self.kill()
+                return
+
+        if self.type == "better enemy":
+            self.counter += 1
+            if self.counter == 14:
+                self.image_index += 1
+                if self.image_index >= len(self.image_list):
+                    self.image_index = 0
+                self.image = self.image_list[self.image_index]
+                self.counter = 0
+
+
+        if self.type == "boss":
+            if self.rect.x - (0.2 * self.image.get_width()) < 0 or self.rect.x + (1.2 * self.image.get_width()) > WIDTH:
+                self.direction *= -1
+            if self.direction == 1:
+                self.move("left")
+            if self.direction == -1:
+                self.move("right")
+
+            if self.health <= 250 and not self.summoned_enemies:
+                self.invincible = True
+                self.speed = 0
+                self.summoned_enemies = True
+                enemy_ship_group.add(Character(70, 60, minion_enemy, "minion enemy"))
+                enemy_ship_group.add(Character(300, 100, minion_enemy, "minion enemy"))
+                enemy_ship_group.add(Character(140, 60, minion_enemy, "minion enemy"))
+                enemy_ship_group.add(Character(120, 100, minion_enemy, "minion enemy"))
+                enemy_ship_group.add(Character(160, 60, minion_enemy, "minion enemy"))
+                enemy_ship_group.add(Character(200, 100, minion_enemy, "minion enemy"))
+                enemy_ship_group.add(Character(240, 60, minion_enemy, "minion enemy"))
+                enemy_ship_group.add(Character(280, 100, minion_enemy, "minion enemy"))
+                enemy_ship_group.add(Character(320, 60, minion_enemy, "minion enemy"))
+                enemy_ship_group.add(Character(350, 100, minion_enemy, "minion enemy"))
+            if self.invincible:
+                count = 0
+                for each in enemy_ship_group:
+                    if each.type == "minion enemy":
+                        count += 1
+                if count == 0:
+                    self.invincible = False
+                    self.speed = 4
+
+        if self.type == "player":
+            self.info_bar()
+            if self.double_shoot:
+                self.double_shoot -= 1
+            if self.fast_shoot:
+                self.fast_shoot -= 1
+
+        if self.type == "second boss":
+            if self.image_index > 0:
+                self.blink_cd += 1
+                if self.blink_cd == self.blink:
+                    self.blink_cd = 0
+                    self.image_index += 1
+                    if self.image_index > 2:
+                        self.image_index = 0
+                    self.image = self.image_list[self.image_index]
+
+            self.counter += 1
+            if self.counter == self.blink_wait:
+                self.image_index = 1
+                self.image = self.image_list[self.image_index]
+                self.counter = 0
+
+
+
+        if random.randint(1, 1000) < self.chance:
+            if not self.invincible:
+                self.create_bullet()
+                self.direction *= -1
+        screen.blit(self.image, self.rect)
+
+    def create_bullet(self):
+        if self.fast_shoot:
+            if (pygame.time.get_ticks() - self.last_shot) < (self.shoot_cooldown / 1.5):
+                return
+            else:
+                self.last_shot = pygame.time.get_ticks()
+        else:
+            if (pygame.time.get_ticks() - self.last_shot) < self.shoot_cooldown:
+                return
+            else:
+                self.last_shot = pygame.time.get_ticks()
+
+        if self.type == "player":
+            if self.double_shoot:
+                new_bullet = Bullet(self.rect.x + 2, self.rect.top - 15, "up", bullet, self.type, 3, self.damage)
+                bullet_list.add(new_bullet)
+                new_bullet = Bullet(self.rect.x + 22, self.rect.top - 15, "up", bullet, self.type, 3, self.damage)
+                bullet_list.add(new_bullet)
+            else:
+                new_bullet = Bullet(self.rect.midtop[0] - 5, self.rect.top - 15, "up", bullet, self.type, 3,
+                                    self.damage)
+                bullet_list.add(new_bullet)
+            laser_player.play(0)
+        elif self.type == "standard enemy" or self.type == "minion enemy" or self.type == "better enemy":
+            new_bullet = Bullet(self.rect.x + 13, self.rect.bottom, "down", enemy_bullet, self.type, 4, self.damage)
+            enemy_bullet_list.add(new_bullet)
+        elif self.type == "boss":
+            new_bullet = Bullet(self.rect.x + 10, self.rect.bottom, "down", enemy_bullet, self.type, 6, self.damage)
+            enemy_bullet_list.add(new_bullet)
+            new_bullet = Bullet(self.rect.x + 20, self.rect.bottom, "down", enemy_bullet, self.type, 6, self.damage)
+            enemy_bullet_list.add(new_bullet)
+        elif self.type == "second boss":
+            enemy_ship_group.add(Character(self.rect.x, self.rect.y, Smallgreen, "tracker enemy"))
+
+    def info_bar(self):
+        screen.blit(infobar, (-15, -17))
+        temp_hp = self.health
+        place_x = 5
+        while temp_hp >= 20:
+            screen.blit(full_heart, (place_x, 5))
+            place_x += 25
+            temp_hp -= 20
+        if temp_hp > 10:
+            screen.blit(half_heart, (place_x, 5))
+
+
+class PickUps(pygame.sprite.Sprite):
+
+    def __init__(self, x, y, force_item=True):
+        pygame.sprite.Sprite.__init__(self)
+        options = ["health pack", "double bullets", "fast shoot"]
+        if force_item:
+            self.type = random.choice(options)
+        else:
+            self.type = force_item
+        self.image = pick_up_dict[self.type]
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+
+    def update(self):
+        if self.rect.colliderect(playerShip.rect):
+            if self.type == "health pack":
+                playerShip.health += 20
+                if playerShip.health >= playerShip.max_health:
+                    playerShip.health = playerShip.max_health
+                    pickup_sound.play(0)
+            elif self.type == "double bullets":
+                playerShip.double_shoot = 600
+                pickup_sound.play(0)
+            elif self.type == "fast shoot":
+                playerShip.fast_shoot = 600
+                pickup_sound.play(0)
+
+            self.kill()
+            return
+
+        self.rect.y += 3
+        if self.rect.y > 600:
+            self.kill()
+
+        screen.blit(self.image, self.rect)
+
+
+class DisplayReward(pygame.sprite.Sprite):
+
+    def __init__(self, x, y, length, number, colour, font, type):
+        pygame.sprite.Sprite.__init__(self)
+        self.x = x
+        self.y = y
+        self.length = length
+        self.number = number
+        self.font = font
+        self.colour = colour
+        self.type = type
+        if self.type == "tracker enemy":
+            self.explosion_image_list = bomb_explosion_list
+            self.length = 20
+        else:
+            self.explosion_image_list = explosion_image_list
+        self.increments = length // len(self.explosion_image_list) + 1
+        self.explosion_index = 0
+
+    def update(self):
+        self.length -= 1
+        if self.length <= 0:
+            if random.randint(1, 8) == 1:
+                item_drops_group.add(PickUps(self.x, self.y))
+            self.kill()
+            return
+        if self.length % self.increments == 0:
+            self.explosion_index += 1
+        if self.number != "":
+            draw_text(f"+ {self.number}", self.colour, self.font, (self.x, self.y))
+        screen.blit(self.explosion_image_list[self.explosion_index], (self.x, self.y))
+
+
+class Bullet(pygame.sprite.Sprite):
+
+    def __init__(self, x, y, direction, image, type, speed, damage):
+        pygame.sprite.Sprite.__init__(self)
+        if type == "player":
+            image = pygame.transform.rotate(image, 180)
+        else:
+            pass
+            # image = pygame.transform.rotate(image, 180)
+        self.rect = image.get_rect()
+        self.rect.center = (x, y)
+        self.type = type
+        self.image = image
+        self.direction = direction
+        self.speed = speed
+        self.damage = damage
+        self.increment_x = 0
+        self.increment_y = 0
+        self.last_angle = 0
+        self.frames = 1000
+        self.angle = 20
+        self.saved_image = self.image
+
+    def update(self):
+        if self.type == "boss":
+            player_x = playerShip.rect.x
+            player_y = playerShip.rect.y
+            if self.rect.y < 250 and self.frames % 20 == 0:
+                x_ratio = player_x - self.rect.x
+                y_ratio = player_y - self.rect.y
+                temp = x_ratio
+                self.increment_x = (x_ratio / (abs(x_ratio) + abs(y_ratio))) * self.speed
+                self.increment_y = (y_ratio / (abs(temp) + abs(y_ratio))) * self.speed
+                angle = math.atan(x_ratio / y_ratio)
+                angle = angle * 180 / math.pi
+                self.image = pygame.transform.rotate(self.image, - self.last_angle)
+                self.image = pygame.transform.rotate(self.saved_image, angle)
+                self.last_angle = angle
+
+            self.frames -= 1
+
+            self.rect.x += self.increment_x
+            self.rect.y += self.increment_y
+
+
+        else:
+
+            if self.direction == "up":
+                self.rect.y -= self.speed
+            elif self.direction == "down":
+                self.rect.y += self.speed
+
+        if self.rect.x > WIDTH or self.rect.x < 0 or self.rect.y > HEIGHT or self.rect.y < 0:
+            self.kill()
+
+        screen.blit(self.image, self.rect.center)
+
+
+bullet_list = pygame.sprite.Group()  # think of this as an array
+enemy_bullet_list = pygame.sprite.Group()  # think of this as an array
+enemy_ship_group = pygame.sprite.Group()
+display_reward_group = pygame.sprite.Group()
+item_drops_group = pygame.sprite.Group()
+
+
+def load_level_one():
+    global playerShip
+    playerShip = Character(300, 500, spaceship, "player")
+
+    enemy_ship_group.add(Character(100, 80, red_enemy_image, "standard enemy"))
+    enemy_ship_group.add(Character(150, 120, blue_enemy_image, "standard enemy"))
+    enemy_ship_group.add(Character(200, 80, red_enemy_image, "standard enemy"))
+    enemy_ship_group.add(Character(250, 120, blue_enemy_image, "standard enemy"))
+    enemy_ship_group.add(Character(300, 80, green_enemy_image, "standard enemy"))
+    enemy_ship_group.add(Character(350, 120, red_enemy_image, "standard enemy"))
+    enemy_ship_group.add(Character(400, 80, green_enemy_image, "standard enemy"))
+    enemy_ship_group.add(Character(450, 120, blue_enemy_image, "standard enemy"))
+    enemy_ship_group.add(Character(500, 80, green_enemy_image, "standard enemy"))
+    enemy_ship_group.add(Character(550, 120, red_enemy_image, "standard enemy"))
+    enemy_ship_group.add(Character(50, 120, red_enemy_image, "standard enemy"))
+
+
+def load_level_two():
+    global playerShip
+    playerShip = Character(300, 500, spaceship, "player")
+
+    enemy_ship_group.add(Character(100, 80, alienship, "better enemy"))
+    enemy_ship_group.add(Character(150, 120, alienship, "better enemy"))
+    enemy_ship_group.add(Character(200, 80, alienship, "better enemy"))
+    enemy_ship_group.add(Character(250, 120, alienship, "better enemy"))
+    enemy_ship_group.add(Character(300, 80, alienship, "better enemy"))
+    enemy_ship_group.add(Character(350, 120, alienship, "better enemy"))
+    enemy_ship_group.add(Character(400, 80, alienship, "better enemy"))
+    enemy_ship_group.add(Character(450, 120, alienship, "better enemy"))
+    enemy_ship_group.add(Character(500, 80, alienship, "better enemy"))
+    enemy_ship_group.add(Character(550, 120, alienship, "better enemy"))
+    enemy_ship_group.add(Character(50, 120, alienship, "better enemy"))
+
+
+def load_level_three():
+    global playerShip
+    playerShip = Character(300, 500, spaceship, "player")
+    enemy_ship_group.add(Character(460, 100, Enemy_boss, "boss"))
+
+
+def load_level_four():
+    global playerShip
+    playerShip = Character(300, 500, spaceship, "player")
+    enemy_ship_group.add(Character(460, 100, Greenoct, "second boss"))
+
+
+font1 = pygame.font.SysFont("Futura", 22)
+font2 = pygame.font.SysFont("Futura", 40)
+font3 = pygame.font.SysFont("Futura", 60)
+reward_font = pygame.font.SysFont("Futura", 28)
+
+
+def draw_text(text, text_col, font, coord, text_screen=screen):
+    text = font.render(text, True, text_col)
+    text_rect = text.get_rect(center=coord)
+    text_screen.blit(text, text_rect)
+
+def reset():
+    global current_level, load_screen_bool, play_game_bool
+    bullet_list.empty()
+    enemy_bullet_list.empty()
+    enemy_ship_group.empty()
+    display_reward_group.empty()
+    item_drops_group.empty()
+
+load_screen_bool = True
+play_game_bool = False
+bgmusic_bool = True
+current_level = 1
+audio_button_counter = 0
+# load_screen_bool, play_game_bool, and current_level are three variables that are initialized
+
+
+
+while True:
+    # A while loop is started which will run until the program is terminated
+    if load_screen_bool:
+        # If the load_screen_bool variable is True, the following code block will execute.
+        screen.blit(screen_background, (0, 0))
+        # The blit() method is used to draw an image on the screen. The screen_background image is drawn at position (0, 0) on the screen
+        pos = pygame.mouse.get_pos()
+        # The get_pos() method is used to get the current position of the mouse
+        if button_area.collidepoint(pos):
+            # The collidepoint() method is used to check whether the mouse is currently over the button_area object
+            screen.blit(highlighted_button_image, (235, 247))
+            # If the mouse is over the button_area, the highlighted_button_image is drawn at position (235, 247) on the screen
+            if pygame.mouse.get_pressed()[0]:
+                # The get_pressed() method is used to check whether the left mouse button is currently being pressed
+                load_screen_bool = False
+                play_game_bool = True
+                # If the left mouse button is being pressed, load_screen_bool is set to False and play_game_bool is set to True
+                for i in range(255):
+                    # A for loop is started which will run 255 times
+                    start_level_screen_list[current_level - 1].set_alpha(255 - i)
+                    screen.blit(background, (0, 0))
+                    screen.blit(start_level_screen_list[current_level - 1], (0, 0))
+                    # In each iteration of the loop, the alpha value of the current_level image is set to 255 - i
+                    # and the background and current_level images are drawn on the screen
+                    pygame.display.update()
+                    # the display is updated
+                load_level_one()
+                # The load_level_one() function is called meaning the program will start to load the enemies and player ship
+        else:
+            # If the mouse is not over the button_area, the following code block will execute
+            screen.blit(button_image, (240, 250))
+            # The button_image is drawn at position (240, 250) on the screen
+
+        if quit_button_area.collidepoint(pos):
+            screen.blit(highlighted_quit_button_image, (235, 307))
+            if pygame.mouse.get_pressed()[0]:
+                # The get_pressed() method is used to check whether the left mouse button is currently being pressed
+                pygame.quit()
+                # If the left mouse button is being pressed, the program is stopped using the quit() function
+        else:
+            screen.blit(quit_button_image, (240, 310))
+
+        audio_button_counter += 1
+        if bgmusic_bool == True:
+            screen.blit(audio_button, (550, 550))
+            if audio_button_area.collidepoint(pos):
+                if pygame.mouse.get_pressed()[0] and audio_button_counter > 20:
+                    bgmusic = pygame.mixer.music.set_volume(0)
+                    bgmusic_bool = False
+                    audio_button_counter = 0
+
+        elif bgmusic_bool == False:
+            screen.blit(audio_mute, (550, 550))
+            if audio_button_area.collidepoint(pos):
+                if pygame.mouse.get_pressed()[0] and audio_button_counter > 20:
+                    bgmusic = pygame.mixer.music.set_volume(0.01)
+                    bgmusic_bool = True
+                    audio_button_counter = 0
+
+
+
+
+
+
+
+
+    if play_game_bool:
+        screen.blit(background, (0, 0))
+
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_w]:
+            playerShip.move("up")
+        if keys[pygame.K_a]:
+            playerShip.move("left")
+        if keys[pygame.K_s]:
+            playerShip.move("down")
+        if keys[pygame.K_d]:
+            playerShip.move("right")
+
+        playerShip.update()
+        if playerShip.alive is False:
+            for i in range(255):
+                you_died.set_alpha(i)
+                screen.blit(background, (0, 0))
+                screen.blit(you_died, (0, 0))
+                draw_text("Score:" + str(playerShip.score), "WHITE", font3, (285, 275), you_died)
+                pygame.time.wait(2)
+                pygame.display.update()
+            screen.blit(you_died, (0, 0))
+            pygame.display.update()
+            pygame.time.wait(2000)
+
+            load_screen_bool = True
+            play_game_bool = False
+
+
+        passes = 0
+        for each_enemy in enemy_ship_group:
+            passes += 1
+            each_enemy.update()
+        if passes == 0 and current_level <= 4:
+            current_level += 1
+            pygame.time.wait(50)
+            reset()
+            if current_level != 5:
+                for i in range(255):
+                    start_level_screen_list[current_level - 1].set_alpha(255 - i)
+                    screen.blit(background, (0, 0))
+                    screen.blit(start_level_screen_list[current_level - 1], (0, 0))
+                    pygame.display.update()
+            elif current_level == 5:
+                for i in range(255):
+                    you_won.set_alpha(i)
+                    screen.blit(background, (0, 0))
+                    screen.blit(you_won, (0, 0))
+                    draw_text("Score:" + str(playerShip.score), "WHITE", font3, (285, 275), you_won)
+                    pygame.time.wait(20)
+                    pygame.display.update()
+                screen.blit(you_won, (0, 0))
+                pygame.display.update()
+                pygame.time.wait(2000)
+            if current_level == 2:
+                load_level_two()
+            elif current_level == 3:
+                load_level_three()
+            elif current_level == 4:
+                load_level_four()
+            else:
+                current_level = 1
+                play_game_bool = False
+                load_screen_bool = True
+
+
+        for each in item_drops_group:
+            each.update()
+
+        for bullets in bullet_list:
+            bullets.update()
+            for each in enemy_ship_group:
+                if each.rect.colliderect(bullets.rect):
+                    bullets.kill()
+                    if not each.invincible:
+                        each.health -= bullets.damage
+                    break
+
+        for bullets in enemy_bullet_list:
+            bullets.update()
+            if bullets.rect.colliderect(playerShip):
+                playerShip.health -= bullets.damage
+                bullets.kill()
+                break
+
+        for each in display_reward_group:
+            each.update()
+
+        draw_text(f"Score: {playerShip.score}", "WHITE", font1, (550, 30))
+
+    pygame.display.update()
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+        if play_game_bool:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    playerShip.create_bullet()
+
+    clock.tick(60)
